@@ -54,6 +54,7 @@ nav button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;bord
 .term-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;cursor:pointer}
 .term-ru{font-family:var(--ru-serif);font-size:19px;color:var(--accent)}
 .term-zh{font-size:14.5px}
+.term-en{font-size:12px;color:var(--muted);font-style:italic}
 .pill{font-size:11px;padding:1px 9px;border-radius:10px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .pill.high{color:var(--ev-high);background:var(--ev-high-bg)}
 .pill.medium{color:var(--ev-med);background:var(--ev-med-bg)}
@@ -122,7 +123,7 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);
 </header>
 
 <div class="searchbar">
-  <input id="q" type="search" placeholder="输入中文或俄语搜索术语：多次波 / 偏移 / AVO / скоростная модель…" autocomplete="off" aria-label="搜索术语">
+  <input id="q" type="search" placeholder="中 / 俄 / 英搜索术语：多次波 / скоростная модель / deconvolution…" autocomplete="off" aria-label="搜索术语">
 </div>
 
 <nav id="tabs" role="tablist">
@@ -132,12 +133,14 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);
   <button data-tab="expr">功能表达</button>
   <button data-tab="para">段落模板</button>
   <button data-tab="err">纠错对照</button>
+  <button data-tab="kits">写作向导</button>
+  <button data-tab="lint">初稿体检</button>
   <button data-tab="tr">翻译助手</button>
 </nav>
 
 <main>
   <section id="tab-terms">
-    <p class="count" id="terms-count"></p>
+    <p class="count" id="terms-count"> <button class="copy" id="anki-btn" style="float:right">⬇ 导出 Anki 卡组 (TSV)</button></p>
     <div id="terms-list"></div>
   </section>
 
@@ -167,6 +170,19 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);
       <thead><tr><th>意图</th><th>❌ 常见误写</th><th>✅ 自然俄语</th></tr></thead>
       <tbody></tbody>
     </table></div>
+  </section>
+
+  <section id="tab-kits" hidden>
+    <p class="hint">按文体和章节集成的写作套件：选定你要写的部分，相关句型、段落模板、功能表达一页备齐。博士论文骨架详见项目 dissertation_blueprint.md。</p>
+    <div id="kit-nav" class="matched" style="margin-bottom:14px"></div>
+    <div id="kit-body"></div>
+  </section>
+
+  <section id="tab-lint" hidden>
+    <p class="hint">粘贴你的<strong>俄语初稿</strong>，即时检查 34 类已知问题（术语误写、格支配、口语化、过度断言、мы 密度、ОГТ/ОСТ 混用、超长句）。规则源自语料纠错库。</p>
+    <textarea id="lint-input" placeholder="Вставьте сюда ваш русский черновик…"></textarea>
+    <button class="btn" id="lint-go">开始体检</button>
+    <div id="lint-out" style="margin-top:14px"></div>
   </section>
 
   <section id="tab-tr" hidden>
@@ -237,7 +253,7 @@ function termCard(t){
     ? `<div class="ex"><button class="copy" data-copy="${esc(t.ex_ru)}">复制</button><div class="ru-text">${hlPh(t.ex_ru)}</div><div class="zh">${esc(t.ex_zh)}</div></div>` : '';
   return `<div class="card" data-num="${t.num}">
     <div class="term-head" role="button" tabindex="0" aria-expanded="false">
-      <span class="term-ru">${esc(t.ru)}</span><span class="term-zh">${esc(t.zh)}</span>
+      <span class="term-ru">${esc(t.ru)}</span><span class="term-zh">${esc(t.zh)}</span>${t.en?`<span class="term-en">${esc(t.en)}</span>`:''}
       ${ev}<span class="chip">${esc(t.group.split(' ')[0])}</span><span class="num">${t.num}</span>
     </div>
     <div class="detail"><dl>${d.join('')}</dl>${ex}
@@ -255,10 +271,11 @@ function searchTerms(q){
   if(!q) return DATA.terms;
   return DATA.terms.map(t=>{
     const zh = t.zh.toLowerCase(), ru = t.ru.toLowerCase();
-    const hay = (t.zh+t.ru+t.preferred+t.colloc+t.observed+t.num).toLowerCase();
+    const hay = (t.zh+t.ru+(t.en||'')+t.preferred+t.colloc+t.observed+t.num).toLowerCase();
     let score = -1;
     if(zh.includes(q)) score = 100 - zh.indexOf(q);
     else if(ru.includes(q)) score = 90 - ru.indexOf(q);
+    else if((t.en||'').toLowerCase().includes(q)) score = 80;
     else if(hay.includes(q)) score = 10;
     return {t, score};
   }).filter(x=>x.score>=0).sort((a,b)=>b.score-a.score).map(x=>x.t);
@@ -316,6 +333,94 @@ $('#para-list').innerHTML = (DATA.para||[]).map(s=>
 $('#err-table tbody').innerHTML = DATA.errors.map(e_=>
   `<tr><td>${esc(e_.intent)}</td><td class="bad">${esc(e_.bad)}</td><td class="good">${esc(e_.good)}</td></tr>`
 ).join('');
+
+// ---------- 写作向导 ----------
+const KITS = [
+ {t:'期刊·摘要', sent:['摘要','标题','关键词'], para:['摘要'], expr:[]},
+ {t:'期刊·引言', sent:['引言'], para:['引言','数据来源'], expr:['研究背景','重要性','质量问题','处理目标']},
+ {t:'方法·处理流程', sent:['处理方法','处理流程','速度分析'], para:['方法段','处理步骤'], expr:['处理流程','方法选择','速度分析','方法选择论证']},
+ {t:'方法·多次波与滤波', sent:['处理流程'], para:[], expr:['多次波','质量问题']},
+ {t:'方法·偏移成像', sent:['偏移成像'], para:[], expr:['偏移成像']},
+ {t:'结果与质控', sent:['处理结果','质量控制'], para:['结果段'], expr:['质量控制','处理结果','算法对比']},
+ {t:'解释章节', sent:['解释','剖面解释'], para:[], expr:['结果解释','谨慎']},
+ {t:'讨论与结论', sent:['讨论','结论'], para:[], expr:['章节开合','假设、局限']},
+ {t:'博士·绪论 14 要素', sent:['学位论文框架'], para:['答辩论点'], expr:[]},
+ {t:'博士·文献综述', sent:[], para:[], expr:['文献综述','章节开合']},
+ {t:'博士·方法章', sent:['处理方法','处理流程'], para:['处理步骤','方法段'], expr:['方法选择论证','算法对比','假设、局限']},
+];
+function kitMatch(list, kws){ return (list||[]).filter(s=>kws.some(k=>s.section.includes(k))); }
+function renderKit(idx){
+  const k = KITS[idx];
+  document.querySelectorAll('#kit-nav .m').forEach((x,i)=>x.style.outline = i===idx?'2px solid var(--accent)':'none');
+  let h = '';
+  const ss = kitMatch(DATA.sentences, k.sent), pp = kitMatch(DATA.para, k.para), ee = kitMatch(DATA.expr, k.expr);
+  if(!ss.length && !pp.length && !ee.length){ $('#kit-body').innerHTML='<p class="hint">本套件暂无匹配内容。</p>'; return; }
+  for(const s of ss){ h += `<h2 class="sec">句型 · ${esc(s.section)}</h2>` + s.items.slice(0,12).map(i=>`<div class="sent-item"><button class="copy" data-copy="${esc(i.ru)}">复制</button><span class="ru-text">${hlPh(i.ru)}</span>${i.zh?`<div class="zh">${esc(i.zh)}</div>`:''}</div>`).join(''); }
+  for(const s of ee){ h += `<h2 class="sec">表达 · ${esc(s.section)}</h2>` + s.items.slice(0,10).map(i=>`<div class="sent-item"><button class="copy" data-copy="${esc(i.ru)}">复制</button><span class="ru-text">${hlPh(i.ru)}</span></div>`).join(''); }
+  for(const s of pp){ h += `<h2 class="sec">段落 · ${esc(s.section)}</h2>` + s.items.slice(0,4).map(i=>`<div class="sent-item"><button class="copy" data-copy="${esc(i.ru)}">复制</button><div class="ru-text" style="white-space:pre-wrap">${hlPh(i.ru)}</div></div>`).join(''); }
+  $('#kit-body').innerHTML = h;
+}
+$('#kit-nav').innerHTML = KITS.map((k,i)=>`<span class="m" style="cursor:pointer" data-kit="${i}">${esc(k.t)}</span>`).join('');
+$('#kit-nav').addEventListener('click', e=>{ const m=e.target.closest('[data-kit]'); if(m) renderKit(+m.dataset.kit); });
+renderKit(0);
+
+// ---------- 初稿体检 ----------
+$('#lint-go').addEventListener('click', ()=>{
+  const text = $('#lint-input').value;
+  if(!text.trim()){ $('#lint-input').focus(); return; }
+  const lines = text.split('\n');
+  const nWords = Math.max((text.match(/[\wа-яё]+/giu)||[]).length, 1);
+  const out = {error:[], warn:[], info:[]};
+  const MARK = {error:'❌', warn:'⚠️', info:'ℹ️'};
+  for(const r of (DATA.lint||[])){
+    if(r.special === 'ogt_ost'){
+      if(/\bОГТ\b|\bМОГТ\b/.test(text) && /\bОСТ\b/.test(text))
+        out.info.push(`ℹ️ 全文同时使用 ОГТ 和 ОСТ —— ${r.zh}`);
+      continue;
+    }
+    if(r.special === 'long_sent'){
+      lines.forEach((ln,i)=>ln.split(/[.!?]/).forEach(s=>{
+        if((s.match(/[\wа-яё]+/giu)||[]).length > 45)
+          out.info.push(`ℹ️ 行 ${i+1}: 句长超 45 词，建议拆分：«${s.trim().slice(0,60)}…»`);
+      }));
+      continue;
+    }
+    const pat = r.re_js || r.re;
+    const hits = [];
+    lines.forEach((ln,i)=>{ let m; const rx2 = new RegExp(pat,'gi'); while((m=rx2.exec(ln))){ hits.push([i+1, m[0]]); if(m.index===rx2.lastIndex) rx2.lastIndex++; } });
+    if(!hits.length) continue;
+    if(r.count){
+      const per1000 = hits.length*1000/nWords;
+      if(per1000 > r.per1000)
+        out[r.sev].push(`${MARK[r.sev]} «${hits[0][1]}» ×${hits.length}（${per1000.toFixed(1)}/千词，阈值 ${r.per1000}）—— ${r.zh} → ${r.fix}`);
+    } else {
+      hits.slice(0,5).forEach(([i,m])=>out[r.sev].push(`${MARK[r.sev]} 行 ${i}: «${m}» —— ${r.zh} → ${r.fix}`));
+      if(hits.length>5) out[r.sev].push(`　…同类还有 ${hits.length-5} 处`);
+    }
+  }
+  const total = out.error.length + out.warn.length + out.info.length;
+  const block = (title, arr, color) => arr.length ?
+    `<h2 class="sec" style="color:${color}">${title}：${arr.length} 项</h2>` +
+    arr.map(f=>`<div class="sent-item">${esc(f)}</div>`).join('') : '';
+  $('#lint-out').innerHTML = total === 0
+    ? '<p class="hint">✅ 未发现已知问题（'+nWords+' 词）。仍建议按母语级审校流程复核。</p>'
+    : `<p class="count">${nWords} 词，共 ${total} 项</p>` +
+      block('错误（必须改）', out.error, 'var(--ev-low)') +
+      block('警告（强烈建议改）', out.warn, 'var(--ev-med)') +
+      block('提示（酌情优化）', out.info, 'var(--accent)');
+});
+
+// ---------- Anki 导出 ----------
+$('#anki-btn').addEventListener('click', ()=>{
+  const rows = DATA.terms.map(t=>[t.ru, `${t.zh}${t.en?' | '+t.en:''}`,
+    (t.ex_ru&&!t.ex_ru.startsWith('需母语者'))?t.ex_ru:'', t.ex_zh||'', t.num, t.ev]
+    .map(c=>String(c).replace(/\t/g,' ')).join('\t'));
+  const tsv = rows.join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([tsv], {type:'text/tab-separated-values'}));
+  a.download = 'marine_seismic_russian_anki.tsv';
+  a.click();
+});
 
 // ---------- 翻译助手 ----------
 function termKeywords(t){
