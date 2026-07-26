@@ -1,0 +1,347 @@
+<title>海洋地震俄语写作助手</title>
+<style>
+:root{
+  --paper:#F7F9FA; --card:#FFFFFF; --ink:#1C2733; --muted:#5B6B7A;
+  --line:#D8E0E6; --accent:#1E5AA8; --accent-soft:#E8F0F9;
+  --ev-high:#177245; --ev-high-bg:#E4F1E9; --ev-med:#8A6118; --ev-med-bg:#F5EDDC;
+  --ev-low:#9A4632; --ev-low-bg:#F6E7E2; --bad:#9A4632; --good:#177245;
+  --ru-serif:Georgia,'Times New Roman',serif;
+  --sans:-apple-system,BlinkMacSystemFont,'PingFang SC','Noto Sans SC','Microsoft YaHei',sans-serif;
+  --mono:ui-monospace,'SF Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#10161D; --card:#18212B; --ink:#E2E8EE; --muted:#94A3B2;
+    --line:#2A3642; --accent:#6FA8E8; --accent-soft:#1B2C42;
+    --ev-high:#7AC79A; --ev-high-bg:#15281E; --ev-med:#D9B36A; --ev-med-bg:#2B2416;
+    --ev-low:#D98A73; --ev-low-bg:#2E1E19; --bad:#D98A73; --good:#7AC79A;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10161D; --card:#18212B; --ink:#E2E8EE; --muted:#94A3B2;
+  --line:#2A3642; --accent:#6FA8E8; --accent-soft:#1B2C42;
+  --ev-high:#7AC79A; --ev-high-bg:#15281E; --ev-med:#D9B36A; --ev-med-bg:#2B2416;
+  --ev-low:#D98A73; --ev-low-bg:#2E1E19; --bad:#D98A73; --good:#7AC79A;
+}
+:root[data-theme="light"]{
+  --paper:#F7F9FA; --card:#FFFFFF; --ink:#1C2733; --muted:#5B6B7A;
+  --line:#D8E0E6; --accent:#1E5AA8; --accent-soft:#E8F0F9;
+  --ev-high:#177245; --ev-high-bg:#E4F1E9; --ev-med:#8A6118; --ev-med-bg:#F5EDDC;
+  --ev-low:#9A4632; --ev-low-bg:#F6E7E2; --bad:#9A4632; --good:#177245;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px 80px}
+header{padding:34px 0 6px;border-bottom:1px solid var(--line);margin-bottom:18px;position:relative}
+.trace{position:absolute;right:0;top:30px;opacity:.5}
+h1{font-size:24px;margin:0 0 2px;letter-spacing:.01em;text-wrap:balance}
+h1 .ru{font-family:var(--ru-serif);color:var(--accent);font-weight:normal;font-style:italic}
+.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+.searchbar{display:flex;gap:10px;margin:4px 0 14px}
+.searchbar input{flex:1;padding:12px 16px;font-size:16px;font-family:var(--sans);
+  border:1.5px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+.searchbar input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+nav{display:flex;gap:2px;flex-wrap:wrap;margin-bottom:20px}
+nav button{padding:8px 16px;border:none;background:none;color:var(--muted);cursor:pointer;
+  font-size:14px;font-family:var(--sans);border-bottom:2px solid transparent}
+nav button:hover{color:var(--ink)}
+nav button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+nav button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.count{color:var(--muted);font-size:12.5px;margin:0 0 10px;font-variant-numeric:tabular-nums}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;
+  padding:14px 18px;margin-bottom:10px}
+.term-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;cursor:pointer}
+.term-ru{font-family:var(--ru-serif);font-size:19px;color:var(--accent)}
+.term-zh{font-size:14.5px}
+.pill{font-size:11px;padding:1px 9px;border-radius:10px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill.high{color:var(--ev-high);background:var(--ev-high-bg)}
+.pill.medium{color:var(--ev-med);background:var(--ev-med-bg)}
+.pill.low{color:var(--ev-low);background:var(--ev-low-bg)}
+.chip{font-size:11px;color:var(--muted);border:1px solid var(--line);
+  padding:0 8px;border-radius:10px;white-space:nowrap}
+.num{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.detail{display:none;margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;font-size:14px}
+.card.open .detail{display:block}
+.detail dt{color:var(--muted);font-size:12px;margin-top:8px;letter-spacing:.04em}
+.detail dd{margin:1px 0 0}
+.detail .ru-text{font-family:var(--ru-serif)}
+.ex{background:var(--accent-soft);border-radius:6px;padding:10px 12px;margin-top:10px}
+.ex .ru-text{font-size:15px}
+.ex .zh{color:var(--muted);font-size:13px;margin-top:3px}
+.warn{color:var(--ev-low)}
+.copy{float:right;font-size:12px;color:var(--accent);background:none;border:1px solid var(--line);
+  border-radius:5px;padding:2px 10px;cursor:pointer;font-family:var(--sans)}
+.copy:hover{background:var(--accent-soft)}
+.copy:focus-visible{outline:2px solid var(--accent)}
+h2.sec{font-size:16px;margin:26px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.gov-item,.sent-item{padding:8px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.gov-item:last-child,.sent-item:last-child{border-bottom:none}
+.sent-item .ru-text{font-family:var(--ru-serif);font-size:15px}
+.sent-item .zh{color:var(--muted);font-size:13px}
+.ph{color:var(--ev-med);font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:14px}
+.tablewrap{overflow-x:auto}
+th{text-align:left;color:var(--muted);font-size:12.5px;font-weight:600;
+  padding:8px 10px;border-bottom:1.5px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td.bad{color:var(--bad);font-family:var(--ru-serif)}
+td.good{color:var(--good);font-family:var(--ru-serif)}
+textarea{width:100%;min-height:130px;padding:12px 14px;font-size:15px;font-family:var(--sans);
+  border:1.5px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);resize:vertical}
+textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:10px 22px;
+  font-size:15px;cursor:pointer;font-family:var(--sans);margin-top:10px}
+:root[data-theme="dark"] .btn,body .btn{color:#fff}
+@media (prefers-color-scheme: dark){.btn{color:#0E1620}}
+:root[data-theme="dark"] .btn{color:#0E1620}
+:root[data-theme="light"] .btn{color:#fff}
+.btn:hover{opacity:.9}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.matched{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.matched .m{background:var(--accent-soft);color:var(--accent);border-radius:10px;
+  padding:2px 10px;font-size:12.5px}
+pre.prompt{background:var(--card);border:1px solid var(--line);border-radius:8px;
+  padding:16px;white-space:pre-wrap;font-size:13px;font-family:var(--mono);
+  line-height:1.55;max-height:420px;overflow-y:auto}
+.hint{color:var(--muted);font-size:13px}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);
+  color:var(--muted);font-size:12.5px;line-height:1.8}
+.legend span{margin-right:14px}
+@media (prefers-reduced-motion: no-preference){
+  .card{transition:border-color .15s}
+  .card:hover{border-color:var(--accent)}
+}
+</style>
+
+<div class="wrap">
+<header>
+  <svg class="trace" width="120" height="46" aria-hidden="true"><path id="wig" fill="none" stroke="var(--accent)" stroke-width="1.4"/></svg>
+  <h1>海洋地震俄语写作助手 <span class="ru">· Морская сейсморазведка по-русски</span></h1>
+  <p class="sub">中文 ⇄ 论文级俄语 · 134 条术语 · 格支配 · 句型模板 · 基于 38 篇俄语论文 + 2 部教材语料 · 运行 3 数据</p>
+</header>
+
+<div class="searchbar">
+  <input id="q" type="search" placeholder="输入中文或俄语搜索术语：多次波 / 偏移 / AVO / скоростная модель…" autocomplete="off" aria-label="搜索术语">
+</div>
+
+<nav id="tabs" role="tablist">
+  <button data-tab="terms" class="on">术语查询</button>
+  <button data-tab="gov">格支配·搭配</button>
+  <button data-tab="sent">句型模板</button>
+  <button data-tab="err">纠错对照</button>
+  <button data-tab="tr">翻译助手</button>
+</nav>
+
+<main>
+  <section id="tab-terms">
+    <p class="count" id="terms-count"></p>
+    <div id="terms-list"></div>
+  </section>
+
+  <section id="tab-gov" hidden>
+    <p class="hint">动词/动名词的格支配与自然搭配。俄语连接词汇的方式与中文完全不同——写作前先在这里确认"用什么格、配什么前置词"。</p>
+    <div id="gov-list"></div>
+  </section>
+
+  <section id="tab-sent" hidden>
+    <p class="hint">按论文章节组织的可改写句型（<span class="ph">[占位符]</span> 替换为你的参数）。点"复制"直接取用。所有句型为语料规律改写（generated），投稿前建议母语者确认。</p>
+    <div id="sent-list"></div>
+  </section>
+
+  <section id="tab-err" hidden>
+    <p class="hint">中国学生最常见的中式俄语及其修正。写完初稿后逐条对照。</p>
+    <div class="tablewrap"><table id="err-table">
+      <thead><tr><th>意图</th><th>❌ 常见误写</th><th>✅ 自然俄语</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
+
+  <section id="tab-tr" hidden>
+    <p class="hint">粘贴你要表达的<strong>中文内容</strong>（词、句或整段）。系统会自动匹配库内标准术语，生成一段带术语约束和写作规则的完整提示词——复制后粘给 Claude 或任何 AI，即可得到符合本语料标准的论文级俄语。</p>
+    <textarea id="tr-input" placeholder="例：本文对多道地震数据进行了多次波压制和叠前深度偏移，处理后剖面上可以看到清晰的 BSR 反射，推测该区存在天然气水合物。"></textarea>
+    <button class="btn" id="tr-go">生成翻译提示词</button>
+    <div id="tr-matched"></div>
+    <div id="tr-out" hidden>
+      <h2 class="sec">生成的提示词 <button class="copy" id="tr-copy">复制全文</button></h2>
+      <pre class="prompt" id="tr-prompt"></pre>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="legend">
+    证据等级：<span><b style="color:var(--ev-high)">high</b> ≥5 篇论文</span>
+    <span><b style="color:var(--ev-med)">medium</b> ≥3 篇</span>
+    <span><b style="color:var(--ev-low)">low</b> 证据有限，慎用</span>
+    <span>+учебник = 教材佐证（不计篇数）</span>
+  </div>
+  数据来源：40 篇俄语海洋地震论文 + Йылмаз 俄译本 + Шалаева/Старовойтов 教材（marine-seismic-russian-writing 语料项目，运行 3）。
+  所有自创（generated）表达用于投稿正文前，请俄罗斯母语者审校。
+</footer>
+</div>
+
+<script>
+const DATA = /*__DATA__*/;
+
+// ---------- 公共 ----------
+const $ = s => document.querySelector(s);
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const hlPh = s => esc(s).replace(/\[([^\]]{1,24})\]/g,'<span class="ph">[$1]</span>');
+function copyText(t, btn){
+  navigator.clipboard.writeText(t).then(()=>{
+    const old = btn.textContent; btn.textContent = '已复制 ✓';
+    setTimeout(()=>btn.textContent = old, 1200);
+  });
+}
+// 头部地震道装饰
+(function(){
+  let d='M 60 0 ';
+  for(let y=0;y<=46;y+=2){
+    const a = Math.sin(y*0.55)*Math.exp(-((y-20)**2)/300)*46;
+    d += `L ${60+a} ${y} `;
+  }
+  document.getElementById('wig').setAttribute('d', d);
+})();
+
+// ---------- 标签页 ----------
+document.getElementById('tabs').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on', x===b));
+  document.querySelectorAll('main > section').forEach(s=>s.hidden = (s.id !== 'tab-'+b.dataset.tab));
+});
+
+// ---------- 术语 ----------
+function termCard(t){
+  const ev = t.ev ? `<span class="pill ${t.ev}">${t.ev}</span>` : '';
+  const d = [];
+  if(t.observed) d.push(`<dt>语料中出现形式</dt><dd class="ru-text">${esc(t.observed)}</dd>`);
+  if(t.preferred) d.push(`<dt>推荐学术用法</dt><dd class="ru-text">${hlPh(t.preferred)}</dd>`);
+  if(t.grammar) d.push(`<dt>语法</dt><dd>${esc(t.grammar)}</dd>`);
+  if(t.colloc) d.push(`<dt>常见搭配</dt><dd class="ru-text">${hlPh(t.colloc)}</dd>`);
+  if(t.avoid) d.push(`<dt class="warn">不推荐</dt><dd class="warn">${esc(t.avoid)}</dd>`);
+  if(t.usage_note) d.push(`<dt>写法</dt><dd>${esc(t.usage_note)}</dd>`);
+  const ex = t.ex_ru && !t.ex_ru.startsWith('需母语者')
+    ? `<div class="ex"><button class="copy" data-copy="${esc(t.ex_ru)}">复制</button><div class="ru-text">${hlPh(t.ex_ru)}</div><div class="zh">${esc(t.ex_zh)}</div></div>` : '';
+  return `<div class="card" data-num="${t.num}">
+    <div class="term-head" role="button" tabindex="0" aria-expanded="false">
+      <span class="term-ru">${esc(t.ru)}</span><span class="term-zh">${esc(t.zh)}</span>
+      ${ev}<span class="chip">${esc(t.group.split(' ')[0])}</span><span class="num">${t.num}</span>
+    </div>
+    <div class="detail"><dl>${d.join('')}</dl>${ex}
+      <dt style="color:var(--muted);font-size:12px;margin-top:8px">来源论文</dt>
+      <dd class="num">${esc(t.src)}${t.ev_full && t.ev_full.length>12 ? ' — '+esc(t.ev_full) : ''}</dd>
+    </div></div>`;
+}
+function renderTerms(list){
+  $('#terms-count').textContent = `${list.length} / ${DATA.terms.length} 条`;
+  $('#terms-list').innerHTML = list.map(termCard).join('') ||
+    '<p class="hint">没有匹配的术语。试试更短的关键词，或切到"翻译助手"直接生成提示词。</p>';
+}
+function searchTerms(q){
+  q = q.trim().toLowerCase();
+  if(!q) return DATA.terms;
+  return DATA.terms.map(t=>{
+    const zh = t.zh.toLowerCase(), ru = t.ru.toLowerCase();
+    const hay = (t.zh+t.ru+t.preferred+t.colloc+t.observed+t.num).toLowerCase();
+    let score = -1;
+    if(zh.includes(q)) score = 100 - zh.indexOf(q);
+    else if(ru.includes(q)) score = 90 - ru.indexOf(q);
+    else if(hay.includes(q)) score = 10;
+    return {t, score};
+  }).filter(x=>x.score>=0).sort((a,b)=>b.score-a.score).map(x=>x.t);
+}
+$('#q').addEventListener('input', e=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on', x.dataset.tab==='terms'));
+  document.querySelectorAll('main > section').forEach(s=>s.hidden = (s.id!=='tab-terms'));
+  renderTerms(searchTerms(e.target.value));
+});
+document.addEventListener('click', e=>{
+  const cp = e.target.closest('.copy[data-copy]');
+  if(cp){ copyText(cp.dataset.copy, cp); return; }
+  const h = e.target.closest('.term-head');
+  if(h){ const c = h.parentElement; c.classList.toggle('open');
+         h.setAttribute('aria-expanded', c.classList.contains('open')); }
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && e.target.classList.contains('term-head')) e.target.click();
+});
+
+// ---------- 格支配 ----------
+$('#gov-list').innerHTML = DATA.gov.map(g=>
+  `<h2 class="sec">${esc(g.title)}</h2>` +
+  g.items.map(i=>`<div class="gov-item ru-text">${hlPh(i)}</div>`).join('')
+).join('');
+
+// ---------- 句型 ----------
+$('#sent-list').innerHTML = DATA.sentences.map(s=>
+  `<h2 class="sec">${esc(s.section)}</h2>` +
+  s.items.map(i=>`<div class="sent-item">
+     <button class="copy" data-copy="${esc(i.ru)}">复制</button>
+     ${i.label?`<span class="chip">${esc(i.label)}</span> `:''}
+     <span class="ru-text">${hlPh(i.ru)}</span>
+     ${i.zh?`<div class="zh">${esc(i.zh)}</div>`:''}</div>`).join('')
+).join('');
+
+// ---------- 纠错 ----------
+$('#err-table tbody').innerHTML = DATA.errors.map(e_=>
+  `<tr><td>${esc(e_.intent)}</td><td class="bad">${esc(e_.bad)}</td><td class="good">${esc(e_.good)}</td></tr>`
+).join('');
+
+// ---------- 翻译助手 ----------
+function termKeywords(t){
+  const kws = new Set();
+  t.zh.split(/[\/、，（）()\s—-]+/).forEach(k=>{ if(k.length>=2 && !/^[a-zA-Z]+$/.test(k)) kws.add(k); });
+  return [...kws];
+}
+function matchTerms(input){
+  const low = input.toLowerCase();
+  return DATA.terms.filter(t=>{
+    if(t.ru.toLowerCase().split(/[\s(]/)[0].length>3 && low.includes(t.ru.toLowerCase().split(/[\s(]/)[0])) return true;
+    return termKeywords(t).some(k=>input.includes(k));
+  }).slice(0, 20);
+}
+const RULES = `1. 正式学术语体：优先无人称与被动结构（выполнена обработка…、было проведено…），避免频繁使用 мы；名词化优先（не «мы подавили кратные волны» → «выполнено подавление кратных волн»）。
+2. 推断强度分级：观测事实用 наблюдается/зафиксирован；处理结果用 получен/в результате обработки；解释推断默认中等支撑（может свидетельствовать о…、указывает на возможное…、позволяет предположить…）；不确定处显式写 предположительно / не исключено, что / требует дополнительной проверки。禁止 «обработка доказывает» 类过度断言。
+3. 所有数值一律用占位符（[f] Гц、[N] м、[t1]–[t2] мс），不得编造数据、地名、结论。
+4. 术语必须使用下方"标准术语表"给定的形式与搭配，注意格支配（свидетельствовать о + П.п.；указывать на + В.п.；соответствовать + Д.п.；быть связанным с + Т.п.；характеризоваться + Т.п.；仪器工具用 Т.п.）。
+5. 固定写法：временнОй разрез（非 временный）；отражаЮЩий горизонт（非 отраженный）；отношение сигнал/шум（带斜杠）；сейсмический профиль（勿用 сейсмическая линия）；缩略语（МОГТ、ССВР、BSR…）首次出现写全称。`;
+$('#tr-go').addEventListener('click', ()=>{
+  const input = $('#tr-input').value.trim();
+  if(!input){ $('#tr-input').focus(); return; }
+  const matched = matchTerms(input);
+  $('#tr-matched').innerHTML = matched.length
+    ? `<div class="matched">${matched.map(t=>`<span class="m">${esc(t.ru)} · ${esc(t.zh.split('（')[0].split('/')[0])}</span>`).join('')}</div>`
+    : '<p class="hint">未匹配到库内术语（仍会生成含通用写作规则的提示词）。</p>';
+  const termBlock = matched.length
+    ? matched.map(t=>{
+        let l = `- ${t.ru} —— ${t.zh}`;
+        if(t.preferred) l += `\n  推荐用法：${t.preferred}`;
+        if(t.colloc) l += `\n  搭配：${t.colloc}`;
+        if(t.avoid) l += `\n  ⚠ ${t.avoid}`;
+        return l;
+      }).join('\n')
+    : '（本段未匹配到专业术语，请按通用地球物理学术俄语处理）';
+  const prompt = `你是俄语地球物理学术写作专家，精通海洋地震数据处理与解释论文的写作规范。请把下面的中文内容改写为可直接用于正式俄语学术论文的母语级俄语。
+
+【硬性写作规则】
+${RULES}
+
+【标准术语表（必须采用这些形式）】
+${termBlock}
+
+【待改写的中文内容】
+${input}
+
+【输出格式】
+1. 俄语译文（正式论文语体）；
+2. 中文回译（便于核对科学含义未变）；
+3. 术语与句法说明（用了哪些标准术语、哪些结构，简要说明）；
+4. 凡属自创表达之处标注"建议俄罗斯母语者确认"。`;
+  $('#tr-prompt').textContent = prompt;
+  $('#tr-out').hidden = false;
+});
+$('#tr-copy').addEventListener('click', e=>copyText($('#tr-prompt').textContent, e.target));
+
+renderTerms(DATA.terms);
+</script>
