@@ -129,6 +129,8 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);
   <button data-tab="terms" class="on">术语查询</button>
   <button data-tab="gov">格支配·搭配</button>
   <button data-tab="sent">句型模板</button>
+  <button data-tab="expr">功能表达</button>
+  <button data-tab="para">段落模板</button>
   <button data-tab="err">纠错对照</button>
   <button data-tab="tr">翻译助手</button>
 </nav>
@@ -147,6 +149,16 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);
   <section id="tab-sent" hidden>
     <p class="hint">按论文章节组织的可改写句型（<span class="ph">[占位符]</span> 替换为你的参数）。点"复制"直接取用。所有句型为语料规律改写（generated），投稿前建议母语者确认。</p>
     <div id="sent-list"></div>
+  </section>
+
+  <section id="tab-expr" hidden>
+    <p class="hint">按写作功能分类的可改写表达（研究背景、数据质量问题、处理目标、结果解释、谨慎推断……）。均为语料规律改写（generated），投稿前建议母语者确认。</p>
+    <div id="expr-list"></div>
+  </section>
+
+  <section id="tab-para" hidden>
+    <p class="hint">段落级模板（摘要、引言、方法、结果各章的整段写法 + 学位论文答辩论点写法规律）。<span class="ph">[占位符]</span> 替换为你的内容。</p>
+    <div id="para-list"></div>
   </section>
 
   <section id="tab-err" hidden>
@@ -281,6 +293,23 @@ $('#sent-list').innerHTML = DATA.sentences.map(s=>
      ${i.label?`<span class="chip">${esc(i.label)}</span> `:''}
      <span class="ru-text">${hlPh(i.ru)}</span>
      ${i.zh?`<div class="zh">${esc(i.zh)}</div>`:''}</div>`).join('')
+).join('');
+
+// ---------- 功能表达 ----------
+$('#expr-list').innerHTML = (DATA.expr||[]).map(s=>
+  `<h2 class="sec">${esc(s.section)}</h2>` +
+  s.items.map(i=>`<div class="sent-item">
+     <button class="copy" data-copy="${esc(i.ru)}">复制</button>
+     <span class="ru-text">${hlPh(i.ru)}</span></div>`).join('')
+).join('');
+
+// ---------- 段落模板 ----------
+$('#para-list').innerHTML = (DATA.para||[]).map(s=>
+  `<h2 class="sec">${esc(s.section)}</h2>` +
+  s.items.map(i=>`<div class="sent-item">
+     <button class="copy" data-copy="${esc(i.ru)}">复制</button>
+     <div class="ru-text" style="white-space:pre-wrap">${hlPh(i.ru)}</div>
+     ${i.zh?`<div class="zh" style="white-space:pre-wrap;margin-top:6px">${esc(i.zh)}</div>`:''}</div>`).join('')
 ).join('');
 
 // ---------- 纠错 ----------
